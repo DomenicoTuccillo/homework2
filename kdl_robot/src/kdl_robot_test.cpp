@@ -103,6 +103,16 @@ int main(int argc, char **argv)
     ros::Publisher joint6_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint6_desired_acceleration", 1);    
     ros::Publisher joint7_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint7_desired_acceleration", 1);
 
+    // errors
+    ros::Publisher joint1_err = n.advertise<std_msgs::Float64>("/iiwa/joint1_err", 1);
+    ros::Publisher joint2_err = n.advertise<std_msgs::Float64>("/iiwa/joint2_err", 1);
+    ros::Publisher joint3_err = n.advertise<std_msgs::Float64>("/iiwa/joint3_err", 1);
+    ros::Publisher joint4_err = n.advertise<std_msgs::Float64>("/iiwa/joint4_err", 1);
+    ros::Publisher joint5_err = n.advertise<std_msgs::Float64>("/iiwa/joint5_err", 1);
+    ros::Publisher joint6_err = n.advertise<std_msgs::Float64>("/iiwa/joint6_err", 1);    
+    ros::Publisher joint7_err = n.advertise<std_msgs::Float64>("/iiwa/joint7_err", 1);
+     
+
     // Services
     ros::ServiceClient robot_set_state_srv = n.serviceClient<gazebo_msgs::SetModelConfiguration>("/gazebo/set_model_configuration");
     ros::ServiceClient pauseGazebo = n.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
@@ -135,6 +145,8 @@ int main(int argc, char **argv)
     std_msgs::Float64 qd1_msg, qd2_msg, qd3_msg, qd4_msg, qd5_msg, qd6_msg, qd7_msg;
     std_msgs::Float64 dqd1_msg, dqd2_msg, dqd3_msg, dqd4_msg, dqd5_msg, dqd6_msg, dqd7_msg;
     std_msgs::Float64 ddqd1_msg, ddqd2_msg, ddqd3_msg, ddqd4_msg, ddqd5_msg, ddqd6_msg, ddqd7_msg;
+    std_msgs::Float64 err1_msg, err2_msg, err3_msg, err4_msg, err5_msg, err6_msg, err7_msg;
+    
     std_srvs::Empty pauseSrv;
 
     // Wait for robot and object state
@@ -192,7 +204,7 @@ int main(int argc, char **argv)
     trajectory_point p = planner.compute_trapezoidal(t);
 
     // Gains
-    double Kp = 100, Kd = 50;
+    double Kp = 120, Kd = 15;
 
     // Retrieve initial simulation time
     ros::Time begin = ros::Time::now();
@@ -262,7 +274,7 @@ int main(int argc, char **argv)
 
             // joint space inverse dynamics control
             tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
-
+            Eigen::VectorXd errors =qd.data-robot.getJntValues();
             // double Kp = 100;
             // double Ko = 100;
             // // Cartesian space inverse dynamics control
@@ -304,6 +316,14 @@ int main(int argc, char **argv)
             ddqd5_msg.data=ddqd.data[4];
             ddqd6_msg.data=ddqd.data[5];
             ddqd7_msg.data=ddqd.data[6];
+            //creating message errors
+            err1_msg.data=errors[0];
+            err2_msg.data=errors[1];;
+            err3_msg.data=errors[2];;
+            err3_msg.data=errors[3];;
+            err5_msg.data=errors[4];;
+            err6_msg.data=errors[5];;
+            err7_msg.data=errors[6];;
 
             // Publish
             joint1_effort_pub.publish(tau1_msg);
@@ -340,7 +360,15 @@ int main(int argc, char **argv)
             joint5_ddqd_pub.publish(ddqd5_msg);
             joint6_ddqd_pub.publish(ddqd6_msg);
             joint7_ddqd_pub.publish(ddqd7_msg);
-            
+             // publishing joint error
+            joint1_err.publish(err1_msg);
+            joint2_err.publish(err2_msg);
+            joint3_err.publish(err3_msg);
+            joint4_err.publish(err4_msg);
+            joint5_err.publish(err5_msg);
+            joint6_err.publish(err6_msg);
+            joint7_err.publish(err7_msg);
+                        
             ros::spinOnce();
             loop_rate.sleep();
         }

@@ -66,6 +66,8 @@ int main(int argc, char **argv)
     ros::Subscriber joint_state_sub = n.subscribe("/iiwa/joint_states", 1, jointStateCallback);
 
     // Publishers
+    
+    // Joints torques
     ros::Publisher joint1_effort_pub = n.advertise<std_msgs::Float64>("/iiwa/iiwa_joint_1_effort_controller/command", 1);
     ros::Publisher joint2_effort_pub = n.advertise<std_msgs::Float64>("/iiwa/iiwa_joint_2_effort_controller/command", 1);
     ros::Publisher joint3_effort_pub = n.advertise<std_msgs::Float64>("/iiwa/iiwa_joint_3_effort_controller/command", 1);
@@ -73,6 +75,33 @@ int main(int argc, char **argv)
     ros::Publisher joint5_effort_pub = n.advertise<std_msgs::Float64>("/iiwa/iiwa_joint_5_effort_controller/command", 1);
     ros::Publisher joint6_effort_pub = n.advertise<std_msgs::Float64>("/iiwa/iiwa_joint_6_effort_controller/command", 1);
     ros::Publisher joint7_effort_pub = n.advertise<std_msgs::Float64>("/iiwa/iiwa_joint_7_effort_controller/command", 1);    
+    
+    // Joints desired positions
+    ros::Publisher joint1_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint1_desired_position", 1);
+    ros::Publisher joint2_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint2_desired_position", 1);
+    ros::Publisher joint3_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint3_desired_position", 1);
+    ros::Publisher joint4_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint4_desired_position", 1);
+    ros::Publisher joint5_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint5_desired_position", 1);
+    ros::Publisher joint6_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint6_desired_position", 1);    
+    ros::Publisher joint7_qd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint7_desired_position", 1);
+    
+    // Joints desired velocities
+    ros::Publisher joint1_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint1_desired_velocity", 1);
+    ros::Publisher joint2_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint2_desired_velocity", 1);
+    ros::Publisher joint3_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint3_desired_velocity", 1);
+    ros::Publisher joint4_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint4_desired_velocity", 1);
+    ros::Publisher joint5_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint5_desired_velocity", 1);
+    ros::Publisher joint6_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint6_desired_velocity", 1);    
+    ros::Publisher joint7_dqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint7_desired_velocity", 1);
+    
+    // Joints desired accelerations
+    ros::Publisher joint1_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint1_desired_acceleration", 1);
+    ros::Publisher joint2_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint2_desired_acceleration", 1);
+    ros::Publisher joint3_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint3_desired_acceleration", 1);
+    ros::Publisher joint4_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint4_desired_acceleration", 1);
+    ros::Publisher joint5_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint5_desired_acceleration", 1);
+    ros::Publisher joint6_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint6_desired_acceleration", 1);    
+    ros::Publisher joint7_ddqd_pub = n.advertise<std_msgs::Float64>("/iiwa/joint7_desired_acceleration", 1);
 
     // Services
     ros::ServiceClient robot_set_state_srv = n.serviceClient<gazebo_msgs::SetModelConfiguration>("/gazebo/set_model_configuration");
@@ -103,6 +132,9 @@ int main(int argc, char **argv)
 
     // Messages
     std_msgs::Float64 tau1_msg, tau2_msg, tau3_msg, tau4_msg, tau5_msg, tau6_msg, tau7_msg;
+    std_msgs::Float64 qd1_msg, qd2_msg, qd3_msg, qd4_msg, qd5_msg, qd6_msg, qd7_msg;
+    std_msgs::Float64 dqd1_msg, dqd2_msg, dqd3_msg, dqd4_msg, dqd5_msg, dqd6_msg, dqd7_msg;
+    std_msgs::Float64 ddqd1_msg, ddqd2_msg, ddqd3_msg, ddqd4_msg, ddqd5_msg, ddqd6_msg, ddqd7_msg;
     std_srvs::Empty pauseSrv;
 
     // Wait for robot and object state
@@ -151,16 +183,16 @@ int main(int argc, char **argv)
     double traj_duration = 3, acc_duration = 0.7, t = 0.0, init_time_slot = 1.0, radius=0.1;
 
     // LINEAR TRAJECTORY CONSTRUCTOR
-     //KDLPlanner planner(traj_duration, acc_duration, init_position, end_position); 
+     KDLPlanner planner(traj_duration, acc_duration, init_position, end_position); 
 
     // CIRCULAR TRAJECTORY CONSTRUCTOR
-    KDLPlanner planner(traj_duration, init_position, radius);
+    //KDLPlanner planner(traj_duration, init_position, radius);
     
     // Retrieve the first trajectory point
-    trajectory_point p = planner.compute_cubic_circular(t);
+    trajectory_point p = planner.compute_trapezoidal(t);
 
     // Gains
-    double Kp = 50, Kd = sqrt(Kp);
+    double Kp = 100, Kd = 50;
 
     // Retrieve initial simulation time
     ros::Time begin = ros::Time::now();
@@ -187,11 +219,11 @@ int main(int argc, char **argv)
             des_cart_acc = KDL::Twist::Zero();
             if (t <= init_time_slot) // wait a second
             {
-                p = planner.compute_cubic_circular(0.0);
+                p = planner.compute_trapezoidal(0.0);
             }
             else if(t > init_time_slot && t <= traj_duration + init_time_slot)
             {
-                p = planner.compute_cubic_circular(t-init_time_slot);
+                p = planner.compute_trapezoidal(t-init_time_slot);
                 des_cart_vel = KDL::Twist(KDL::Vector(p.vel[0], p.vel[1], p.vel[2]),KDL::Vector::Zero());
                 des_cart_acc = KDL::Twist(KDL::Vector(p.acc[0], p.acc[1], p.acc[2]),KDL::Vector::Zero());
             }
@@ -217,18 +249,26 @@ int main(int argc, char **argv)
             // inverse kinematics
             qd.data << jnt_pos[0], jnt_pos[1], jnt_pos[2], jnt_pos[3], jnt_pos[4], jnt_pos[5], jnt_pos[6];
             qd = robot.getInvKin(qd, des_pose);
+            dqd=robot.getInvKinVel(qd,des_cart_vel);
+
+        //     Eigen::Matrix<double,6,7> J = robot.getEEJacobian().data;
+        //     Eigen::Matrix<double,6,7> Jdot = robot.getEEJacDotqDot().data;
+        //     Eigen::Matrix<double,7,1> desacc=robot.getInvKinAcc(des_cart_acc,dqd,J,Jdot);
+        //    for(int i=0;i<7;i++){
+        //     ddqd.data[i]=desacc[i];
+        //    }
 
            // robot.getInverseKinematics(des_pose, des_cart_vel, des_cart_acc,qd,dqd,ddqd);
 
             // joint space inverse dynamics control
-           // tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
+            tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
 
-            double Kp = 100;
-            double Ko = 100;
-            // Cartesian space inverse dynamics control
-            tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
-                                     Kp, Ko, 2*sqrt(Kp), 2*sqrt(Ko));
-                std::cout<<tau<<std::endl;
+            // double Kp = 100;
+            // double Ko = 100;
+            // // Cartesian space inverse dynamics control
+            // tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
+            //                          Kp, Ko, 2*sqrt(Kp), 2*sqrt(Ko));
+            //     std::cout<<tau<<std::endl;
             // Set torques
             tau1_msg.data = tau[0];
             tau2_msg.data = tau[1];
@@ -237,6 +277,33 @@ int main(int argc, char **argv)
             tau5_msg.data = tau[4];
             tau6_msg.data = tau[5];
             tau7_msg.data = tau[6];
+            
+            //creating message desired joints positions
+            qd1_msg.data=qd.data[0];
+            qd2_msg.data=qd.data[1];
+            qd3_msg.data=qd.data[2];
+            qd4_msg.data=qd.data[3];
+            qd5_msg.data=qd.data[4];
+            qd6_msg.data=qd.data[5];
+            qd7_msg.data=qd.data[6];
+            
+            //creating message desired joints velocities
+            dqd1_msg.data=dqd.data[0];
+            dqd2_msg.data=dqd.data[1];
+            dqd3_msg.data=dqd.data[2];
+            dqd4_msg.data=dqd.data[3];
+            dqd5_msg.data=dqd.data[4];
+            dqd6_msg.data=dqd.data[5];
+            dqd7_msg.data=dqd.data[6];
+            
+            //creating message desired joints accelerations
+            ddqd1_msg.data=ddqd.data[0];
+            ddqd2_msg.data=ddqd.data[1];
+            ddqd3_msg.data=ddqd.data[2];
+            ddqd4_msg.data=ddqd.data[3];
+            ddqd5_msg.data=ddqd.data[4];
+            ddqd6_msg.data=ddqd.data[5];
+            ddqd7_msg.data=ddqd.data[6];
 
             // Publish
             joint1_effort_pub.publish(tau1_msg);
@@ -246,7 +313,34 @@ int main(int argc, char **argv)
             joint5_effort_pub.publish(tau5_msg);
             joint6_effort_pub.publish(tau6_msg);
             joint7_effort_pub.publish(tau7_msg);
+            
+            //publishing desired joint positions
+            joint1_qd_pub.publish(qd1_msg);
+            joint2_qd_pub.publish(qd2_msg);
+            joint3_qd_pub.publish(qd3_msg);
+            joint4_qd_pub.publish(qd4_msg);
+            joint5_qd_pub.publish(qd5_msg);
+            joint6_qd_pub.publish(qd6_msg);
+            joint7_qd_pub.publish(qd7_msg);
+            
+            // publishing desired joint velocities
+            joint1_dqd_pub.publish(dqd1_msg);
+            joint2_dqd_pub.publish(dqd2_msg);
+            joint3_dqd_pub.publish(dqd3_msg);
+            joint4_dqd_pub.publish(dqd4_msg);
+            joint5_dqd_pub.publish(dqd5_msg);
+            joint6_dqd_pub.publish(dqd6_msg);
+            joint7_dqd_pub.publish(dqd7_msg);
 
+             // publishing desired joint acceleration
+            joint1_ddqd_pub.publish(ddqd1_msg);
+            joint2_ddqd_pub.publish(ddqd2_msg);
+            joint3_ddqd_pub.publish(ddqd3_msg);
+            joint4_ddqd_pub.publish(ddqd4_msg);
+            joint5_ddqd_pub.publish(ddqd5_msg);
+            joint6_ddqd_pub.publish(ddqd6_msg);
+            joint7_ddqd_pub.publish(ddqd7_msg);
+            
             ros::spinOnce();
             loop_rate.sleep();
         }

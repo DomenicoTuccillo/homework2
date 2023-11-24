@@ -51,6 +51,10 @@ public:
     KDL::ChainIkSolverPos_NR_JL* ikSol_;
     KDL::JntArray getInvKin(const KDL::JntArray &q,
                             const KDL::Frame &eeFrame);
+    KDL::JntArray getInvKinVel(const KDL::JntArray &qd,
+                        const KDL::Twist &eeFrameVel);
+    Eigen::Matrix<double,7,1> getInvKinAcc(const KDL::Twist &eeFrameAcc,const KDL::JntArray &dqd,
+                                Eigen::Matrix<double,6,7> J,Eigen::Matrix<double,6,7> Jdot);
     // end-effector
     KDL::Frame getEEFrame();
     KDL::Frame getFlangeEE();

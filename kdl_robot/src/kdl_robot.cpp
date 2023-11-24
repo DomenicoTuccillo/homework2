@@ -178,6 +178,32 @@ KDL::JntArray KDLRobot::getInvKin(const KDL::JntArray &q,
     }
     return jntArray_out_;
 }
+
+KDL::JntArray KDLRobot::getInvKinVel(const KDL::JntArray &qd,
+                        const KDL::Twist &eeFrameVel)
+{
+    KDL::JntArray jntArray_out_;
+    jntArray_out_.resize(chain_.getNrOfJoints());
+    int err = ikVelSol_->CartToJnt(qd, eeFrameVel, jntArray_out_);
+    if (err != 0)
+    {
+        printf("inverse kinematics failed with error: %d \n", err);
+    }
+    return jntArray_out_;
+}
+
+ Eigen::Matrix<double,7,1> getInvKinAcc(const KDL::Twist &eeFrameAcc,const KDL::JntArray &dqd,
+                                Eigen::Matrix<double,6,7> J,Eigen::Matrix<double,6,7> Jdot){
+    Eigen::Matrix<double,7,1> vel;
+    for(int i=0;i<7;i++){
+        vel[i]=dqd.data[i];
+    }
+   
+    return pseudoinverse(J)*(toEigen(eeFrameAcc)-Jdot*vel);
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //                              END-EFFECTOR                                  //
 ////////////////////////////////////////////////////////////////////////////////

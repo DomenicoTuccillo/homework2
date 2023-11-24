@@ -148,10 +148,10 @@ int main(int argc, char **argv)
     end_position << init_cart_pose.p.x(), -init_cart_pose.p.y(), init_cart_pose.p.z();
 
     // Plan trajectory
-    double traj_duration = 1.5, acc_duration = 0.5, t = 0.0, init_time_slot = 1.0, radius=0.1;
+    double traj_duration = 3, acc_duration = 0.7, t = 0.0, init_time_slot = 1.0, radius=0.1;
 
     // LINEAR TRAJECTORY CONSTRUCTOR
-    // KDLPlanner planner(traj_duration, acc_duration, init_position, end_position); 
+     //KDLPlanner planner(traj_duration, acc_duration, init_position, end_position); 
 
     // CIRCULAR TRAJECTORY CONSTRUCTOR
     KDLPlanner planner(traj_duration, init_position, radius);
@@ -221,14 +221,14 @@ int main(int argc, char **argv)
            // robot.getInverseKinematics(des_pose, des_cart_vel, des_cart_acc,qd,dqd,ddqd);
 
             // joint space inverse dynamics control
-            tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
+           // tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
 
-            // double Kp = 1000;
-            // double Ko = 1000;
-            // // Cartesian space inverse dynamics control
-            // tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
-            //                          Kp, Ko, 2*sqrt(Kp), 2*sqrt(Ko));
-
+            double Kp = 100;
+            double Ko = 100;
+            // Cartesian space inverse dynamics control
+            tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
+                                     Kp, Ko, 2*sqrt(Kp), 2*sqrt(Ko));
+                std::cout<<tau<<std::endl;
             // Set torques
             tau1_msg.data = tau[0];
             tau2_msg.data = tau[1];

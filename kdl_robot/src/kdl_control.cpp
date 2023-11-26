@@ -43,31 +43,10 @@ Eigen::VectorXd KDLController::idCntr(KDL::Frame &_desPos,
    Kd.block(3,3,3,3) = _Kdo*Eigen::Matrix3d::Identity();//costruisco la matrice 3x3 dei guadagni sulla derivata dell'errore di orientamento
 
 
-//QUESTO NON SERVE ERA PER CONVERTIRE JACOBIAN TO MATRIX 
-//    read current state 
-//    int rows = 6;
-//    int cols = 7;
-
-//    Eigen::MatrixXd J(rows, cols);
-
-//     // Copy data from KDL Jacobian to Eigen matrix
-//     for (unsigned int i = 0; i < rows; ++i) {
-//         for (unsigned int j = 0; j < cols; ++j) {
-//             J(i, j) = robot_->getEEJacobian()(i, j);
-//         }
-//     }
 
 
     //CONVERSIONE DA JACOBIAN A MATRIX SI PUO' FARE SEMPLICEMENTE COSI
     Eigen::Matrix<double,6,7> J = robot_->getEEJacobian().data;
-
-
-    //QUESTO NON SERVE, USIAMO J GEOMETRICO
-   //J= KDL::Jacobian(7)
-   //J= robot_->getEEJacobian();
-   //dobbiamo ricavare la matrice di mapping T(phi_e) e trovare il jacobiano analitico come
-   //Ja=Ta^(-1)*J dove Ta=[ I 0; 0 T(phi_e)]
-
 
    Eigen::Matrix<double,7,7> I = Eigen::Matrix<double,7,7>::Identity();
    Eigen::Matrix<double,7,7> M = robot_->getJsim();
@@ -81,9 +60,7 @@ Eigen::VectorXd KDLController::idCntr(KDL::Frame &_desPos,
    Eigen::Matrix<double,3,3,Eigen::RowMajor> R_e(robot_->getEEFrame().M.data);
    R_d = matrixOrthonormalization(R_d);
    R_e = matrixOrthonormalization(R_e);
-//    Eigen::Matrix<double,3,1> euler= computeEulerAngles(R_e);
-//    Eigen::Matrix<double,6,7> JA=AnalitycalJacobian(J,euler);
-//    Eigen::Matrix<double,7,6> JApinv = pseudoinverse(JA);
+
    // velocity
    Eigen::Vector3d dot_p_d(_desVel.vel.data);
    Eigen::Vector3d dot_p_e(robot_->getEEVelocity().vel.data);

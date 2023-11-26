@@ -193,7 +193,7 @@ int main(int argc, char **argv)
     end_position << init_cart_pose.p.x(), -init_cart_pose.p.y(), init_cart_pose.p.z();
 
     // Plan trajectory
-    double traj_duration = 3, acc_duration = 0.7, t = 0.0, init_time_slot = 1.0, radius=0.08;
+    double traj_duration = 5, acc_duration = 0.7, t = 0.0, init_time_slot = 1.0, radius=0.08;
 
     // LINEAR TRAJECTORY CONSTRUCTOR
      //KDLPlanner planner(traj_duration, acc_duration, init_position, end_position); 
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
     KDLPlanner planner(traj_duration, acc_duration, init_position, end_position,radius);
     // Retrieve the first trajectory point
     std::string profile="cubic";
-    std::string path="circular";
+    std::string path="linear";
     trajectory_point p = planner.compute_trajectory(t,profile,path);
 
     // Gains
@@ -273,13 +273,13 @@ int main(int argc, char **argv)
             double Kp = 80;
             double Ko = 50;
             double Kdp = 40;
-            
+
             // Cartesian space inverse dynamics control
-            /*tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
-                                     Kp, Ko, Kdp, 2*sqrt(Ko));*/
-            //CArtesian space inverse dynamics controll exploiting redundancy, we do not assign the orientation
             tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
-                                     Kp, Kdp);                          
+                                     Kp, Ko, Kdp, 2*sqrt(Ko));
+            //CArtesian space inverse dynamics controll exploiting redundancy, we do not assign the orientation
+           //  tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
+            //                          Kp, Kdp);                          
             Eigen::VectorXd errors =qd.data-robot.getJntValues();
             // Set torques
             tau1_msg.data = tau[0];

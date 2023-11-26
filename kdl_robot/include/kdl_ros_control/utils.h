@@ -232,11 +232,7 @@ return e_phi;
 inline Eigen::Matrix<double,3,3> T_matrix(const Eigen::Matrix<double,3,1> &euler){
 double phi=euler(0,0);
  double theta=euler(1,0);
-  Eigen::Matrix<double,3,3> T;/*{
-    {0, -sin(phi),cos(phi)*sin(theta)},
-    {0, cos(phi),sin(phi)*sin(theta)},
-    {1,0, cos(theta)}
- };*/
+  Eigen::Matrix<double,3,3> T;
  T(0,0) = 0;
  T(0,1) = -sin(phi);
  T(0,2) = cos(phi)*sin(theta);
@@ -251,7 +247,7 @@ double phi=euler(0,0);
 
 inline  Eigen::Matrix<double,6,7> AnalitycalJacobian( const Eigen::Matrix<double,6,7> &J,const Eigen::Matrix<double,3,1> &euler){
 
- Eigen::Matrix<double,6,6> TA;
+ Eigen::Matrix<double,6,6> TA=Eigen::MatrixXd::Zero(6,6);
 TA.block(0,0,3,3) = Eigen::Matrix3d::Identity();
 TA.block(3,3,3,3) = T_matrix(euler);
  return TA.inverse()*J;

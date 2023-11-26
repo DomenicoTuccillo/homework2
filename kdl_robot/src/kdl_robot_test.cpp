@@ -193,23 +193,23 @@ int main(int argc, char **argv)
     end_position << init_cart_pose.p.x(), -init_cart_pose.p.y(), init_cart_pose.p.z();
 
     // Plan trajectory
-    double traj_duration = 3, acc_duration = 0.7, t = 0.0, init_time_slot = 1.0, radius=0.1;
+    double traj_duration = 3, acc_duration = 0.7, t = 0.0, init_time_slot = 1.0, radius=0.08;
 
     // LINEAR TRAJECTORY CONSTRUCTOR
      //KDLPlanner planner(traj_duration, acc_duration, init_position, end_position); 
 
     // CIRCULAR TRAJECTORY CONSTRUCTOR
     //KDLPlanner planner(traj_duration, init_position, radius);
-    
+
     //GENERAL CONSTRUCTOR
     KDLPlanner planner(traj_duration, acc_duration, init_position, end_position,radius);
     // Retrieve the first trajectory point
-    std::string profile="trapezoidal";
+    std::string profile="cubic";
     std::string path="circular";
     trajectory_point p = planner.compute_trajectory(t,profile,path);
 
     // Gains
-    double Kp = 120, Kd = 15;
+    double Kp = 150, Kd = 72;
 
     // Retrieve initial simulation time
     ros::Time begin = ros::Time::now();
@@ -267,25 +267,19 @@ int main(int argc, char **argv)
             qd.data << jnt_pos[0], jnt_pos[1], jnt_pos[2], jnt_pos[3], jnt_pos[4], jnt_pos[5], jnt_pos[6];
             qd = robot.getInvKin(qd, des_pose);
             dqd=robot.getInvKinVel(qd,des_cart_vel);
-
-        //     Eigen::Matrix<double,6,7> J = robot.getEEJacobian().data;
-        //     Eigen::Matrix<double,6,7> Jdot = robot.getEEJacDotqDot().data;
-        //     Eigen::Matrix<double,7,1> desacc=robot.getInvKinAcc(des_cart_acc,dqd,J,Jdot);
-        //    for(int i=0;i<7;i++){
-        //     ddqd.data[i]=desacc[i];
-        //    }
-
-           // robot.getInverseKinematics(des_pose, des_cart_vel, des_cart_acc,qd,dqd,ddqd);
-
             // joint space inverse dynamics control
-           tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
+          // tau = controller_.idCntr(qd, dqd, ddqd, Kp, Kd);
             
-            // double Kp = 130;
-            // double Ko = 10;
-            // double Kdp = 25;
-            // // Cartesian space inverse dynamics control
-            // tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
-            //                          Kp, Ko, Kdp, 2*sqrt(Ko));
+            double Kp = 80;
+            double Ko = 50;
+            double Kdp = 40;
+            
+            // Cartesian space inverse dynamics control
+            /*tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
+                                     Kp, Ko, Kdp, 2*sqrt(Ko));*/
+            //CArtesian space inverse dynamics controll exploiting redundancy, we do not assign the orientation
+            tau = controller_.idCntr(des_pose, des_cart_vel, des_cart_acc,
+                                     Kp, Kdp);                          
             Eigen::VectorXd errors =qd.data-robot.getJntValues();
             // Set torques
             tau1_msg.data = tau[0];
